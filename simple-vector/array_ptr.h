@@ -37,18 +37,18 @@ public:
     // Прекращает владением массивом в памяти, возвращает значение адреса массива
     // После вызова метода указатель на массив должен обнулиться
     [[nodiscard]] Type* Release() noexcept {
-        Type* release = raw_ptr_;
-        raw_ptr_ = nullptr;
-        return release;
+        return std::exchange(raw_ptr_, nullptr);
     }
 
     // Возвращает ссылку на элемент массива с индексом index
     Type& operator[](size_t index) noexcept {
+        assert(raw_ptr_ != nullptr);
         return *(raw_ptr_ + index);
     }
 
     // Возвращает константную ссылку на элемент массива с индексом index
     const Type& operator[](size_t index) const noexcept {
+        assert(raw_ptr_ != nullptr);
         return *(raw_ptr_ + index);
     }
 

@@ -49,7 +49,7 @@ public:
         array_(ArrayPtr<Type>(init.size()))
         , size_(init.size())
         , capacity_(init.size()) {
-        std::move(init.begin(), init.end(), begin());
+        std::copy(init.begin(), init.end(), begin());
     }
 
     SimpleVector(const SimpleVector& other):
