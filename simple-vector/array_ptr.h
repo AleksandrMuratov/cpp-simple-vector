@@ -3,6 +3,7 @@
 #include <cassert>
 #include <algorithm>
 #include <utility>
+#include <new>
 
 template <typename Type>
 class ArrayPtr {
@@ -30,8 +31,7 @@ public:
     ArrayPtr(ArrayPtr&& other) noexcept: raw_ptr_(std::exchange(other.raw_ptr_, nullptr)) {}
 
     ArrayPtr& operator=(ArrayPtr&& other) noexcept {
-        ArrayPtr tmp(other);
-        swap(tmp);
+        swap(other);
     }
 
     // Прекращает владением массивом в памяти, возвращает значение адреса массива

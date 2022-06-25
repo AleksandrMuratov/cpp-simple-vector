@@ -27,33 +27,33 @@ public:
     SimpleVector() noexcept = default;
 
     explicit SimpleVector(size_t size): 
-        array_(ArrayPtr<Type>(size))
+        array_(size)
         , size_(size)
         , capacity_(size) {
         std::fill(begin(), end(), Type());
     }
 
     explicit SimpleVector(ReserveProxyObj r):
-        array_(ArrayPtr<Type>(r.capacity_to_reserve_))
+        array_(r.capacity_to_reserve_)
         , size_(0)
         , capacity_(r.capacity_to_reserve_){}
 
     SimpleVector(size_t size, const Type& value):
-        array_(ArrayPtr<Type>(size))
+        array_(size)
         , size_(size)
         , capacity_(size) {
         std::fill(begin(), end(), value);
     }
 
     SimpleVector(std::initializer_list<Type> init):
-        array_(ArrayPtr<Type>(init.size()))
+        array_(init.size())
         , size_(init.size())
         , capacity_(init.size()) {
         std::copy(init.begin(), init.end(), begin());
     }
 
     SimpleVector(const SimpleVector& other):
-        array_(ArrayPtr<Type>(other.GetCapacity()))
+        array_(other.GetCapacity())
         , size_(other.GetSize())
         , capacity_(other.GetCapacity()){
         std::copy(other.begin(), other.end(), begin());
@@ -78,43 +78,29 @@ public:
         return *this;
     }
 
-    void PushBack(Type item) {
-        if (size_ == capacity_) {
-            size_t new_capacity_ = (capacity_ == 0) ? 1 : capacity_ * 2;
-            ArrayPtr<Type> new_array_(new_capacity_);
-            std::move(begin(), end(), new_array_.Get());
-            array_.swap(new_array_);
-            capacity_ = new_capacity_;
-        }
-        array_[size_++] = std::forward<Type>(item);
+    void PushBack(const Type& item) {
+        EmplaceBack(item);
     }
 
-    Iterator Insert(ConstIterator pos, Type value) {
-        size_t index_pos = pos - begin();
-        if (size_ == capacity_) {
-            size_t new_capacity_ = (capacity_ == 0) ? 1 : capacity_ * 2;
-            ArrayPtr<Type> new_array_(new_capacity_);
-            std::move(begin(), begin() + index_pos, new_array_.Get());
-            new_array_[index_pos] = std::move(value);
-            std::move(begin() + index_pos, end(), new_array_.Get() + index_pos + 1);
-            array_.swap(new_array_);
-            capacity_ = new_capacity_;
-            ++size_;
-        }
-        else {
-            ++size_;
-            std::move_backward(begin() + index_pos, begin() + size_ - 1, end());
-            array_[index_pos] = std::move(value);
-        }
-        return begin() + index_pos;
+    void PushBack(Type&& item) {
+        EmplaceBack(std::move(item));
+    }
+
+    Iterator Insert(ConstIterator pos, const Type& value) {
+        return Emplace(pos, value);
+    }
+
+    Iterator Insert(ConstIterator pos, Type&& value) {
+        return Emplace(pos, std::move(value));
     }
 
     void PopBack() noexcept {
-        assert(size_ > 0);
+        assert(!IsEmpty());
         --size_;
     }
 
     Iterator Erase(ConstIterator pos) {
+        assert(pos >= cbegin() && pos <= cend());
         size_t index_pos = pos - begin();
         std::move(begin() + index_pos + 1, end(), begin() + index_pos);
         --size_;
@@ -149,7 +135,7 @@ public:
     }
 
     Type& operator[](size_t index) noexcept {
-        assert(size_ > 0 && index < size_);
+        assert(index < size_);
         return array_[index];
     }
 
@@ -160,14 +146,14 @@ public:
 
     Type& At(size_t index) {
         if (index >= size_) {
-            throw std::out_of_range("");
+            throw std::out_of_range("out of range of the array");
         }
         return array_[index];
     }
 
     const Type& At(size_t index) const {
         if (index >= size_) {
-            throw std::out_of_range("");
+            throw std::out_of_range("out of range of the array");
         }
         return array_[index];
     }
@@ -222,6 +208,37 @@ private:
     ArrayPtr<Type> array_;
     size_t size_ = 0;
     size_t capacity_ = 0;
+
+    template<typename... Args>
+    Iterator Emplace(ConstIterator pos, Args&&... args) {
+        assert(pos >= cbegin() && pos <= cend());
+        size_t index_pos = pos - begin();
+        if (size_ == capacity_) {
+            size_t new_capacity_ = (capacity_ == 0) ? 1 : capacity_ * 2;
+            ArrayPtr<Type> new_array_(new_capacity_);
+            std::move(begin(), begin() + index_pos, new_array_.Get());
+            new_array_[index_pos] = Type(std::forward<Args>(args)...);
+            std::move(begin() + index_pos, end(), new_array_.Get() + index_pos + 1);
+            array_.swap(new_array_);
+            capacity_ = new_capacity_;
+            ++size_;
+        }
+        else {
+            ++size_;
+            std::move_backward(begin() + index_pos, begin() + size_ - 1, end());
+            array_[index_pos] = Type(std::forward<Args>(args)...);
+        }
+        return begin() + index_pos;
+    }
+
+    template<typename... Args>
+    void EmplaceBack(Args&&... args) {
+        if (size_ == capacity_) {
+            size_t new_capacity_ = (capacity_ == 0) ? 1 : capacity_ * 2;
+            Reserve(new_capacity_);
+        }
+        array_[size_++] = Type(std::forward<Args>(args)...);
+    }
 };
 
 template <typename Type>
