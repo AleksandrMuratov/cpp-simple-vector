@@ -32,6 +32,7 @@ public:
 
     ArrayPtr& operator=(ArrayPtr&& other) noexcept {
         swap(other);
+	return *this;
     }
 
     // Прекращает владением массивом в памяти, возвращает значение адреса массива
