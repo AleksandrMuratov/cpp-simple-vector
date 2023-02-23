@@ -8,4 +8,6 @@
 * Move-семантика
 * Templates
 * Variadic Templates
-* Forwarding reference
+* Perfect Forwarding
+
+Используемый стандарт языка: c++17
